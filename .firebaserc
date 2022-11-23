@@ -1,0 +1,14 @@
+{
+  "targets": {
+    "laudo-hidroimagem": {
+      "hosting": {
+        "hidroimagem": [
+          "hidroimagem"
+        ]
+      }
+    }
+  },
+  "projects": {
+    "default": "laudo-hidroimagem"
+  }
+}
