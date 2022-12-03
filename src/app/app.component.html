@@ -328,6 +328,23 @@
 <div class="content" role="main">
 
   <!-- Highlight Card -->
+  <div class="col-md-8" id="htmlData">
+    <table class="table table-bordered">
+        <tr class="table-primary">
+            <th>Id</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+        </tr>
+        <tr *ngFor="let user of USERS">
+            <th>{{user.id}}</th>
+            <td>{{user.name}}</td>
+            <td>{{user.email}}</td>
+            <td>{{user.phone}}</td>
+        </tr>
+    </table>
+</div>
+<button class="btn btn-success btn-block" (click)="openPDF()">Download PDF</button>
   <div class="card highlight-card card-small">
 
     <svg id="rocket" xmlns="http://www.w3.org/2000/svg" width="101.678" height="101.678" viewBox="0 0 101.678 101.678">
@@ -352,6 +369,12 @@
 
   <!-- Resources -->
   <h2>Resources</h2>
+  <button mat-raised-button>Basic</button>
+  <button mat-raised-button color="primary">Primary</button>
+  <button mat-raised-button color="accent">Accent</button>
+  <button mat-raised-button color="warn">Warn</button>
+  <button mat-raised-button disabled>Disabled</button>
+  <a mat-raised-button href="https://www.google.com/" target="_blank">Link</a>
   <p>Here are some links to help you get started:</p>
 
   <div class="card-container">
