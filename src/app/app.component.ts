@@ -1,7 +1,12 @@
 import { Component } from '@angular/core';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-export interface Item { nome: string; sobrenome:string }
+export interface Item { nome: string; sobrenome: string }
+import { RelatoriosService } from '../app/services/relatorios.service';
+import { Firestore, collectionData, collection } from '@angular/fire/firestore';
+import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/compat/firestore';
+import { Observable } from 'rxjs';
+import { GuardsCheckEnd } from '@angular/router';
 
 @Component({
   selector: 'app-root',
@@ -49,6 +54,27 @@ export class AppComponent {
       "phone": "1-477-935-8478 x6430"
     }
   ];
+
+
+  relatorios: any = [];
+  nome : string = "";
+  sobrenome : string = "";
+
+  constructor(private relatoriosService: RelatoriosService) {
+  relatoriosService.buscarRelatorios().subscribe((relatorios)=>{
+    this.relatorios = relatorios;
+  });
+  }
+
+
+  public adicionarRelatorio(){
+    alert(this.nome);
+    this.relatoriosService.addRelatorio({
+      nome: this.nome,
+      sobrenome: this.sobrenome
+    });
+  }
+
 
   public openPDF(): void {
     let DATA: any = document.getElementById('htmlData');
