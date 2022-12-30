@@ -1,37 +1,37 @@
-import { NgModule, isDevMode } from '@angular/core';
+import { NgModule, isDevMode, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
+
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { initializeApp,provideFirebaseApp } from '@angular/fire/app';
+import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { environment } from '../environments/environment';
-import { provideAuth,getAuth } from '@angular/fire/auth';
+import { provideAuth, getAuth } from '@angular/fire/auth';
 import { ServiceWorkerModule } from '@angular/service-worker';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import {MatButtonModule} from '@angular/material/button';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { AngularFireModule } from '@angular/fire/compat';
 import { AngularFirestoreModule } from '@angular/fire/compat/firestore';
 import { AngularFireStorageModule } from '@angular/fire/compat/storage';
-import {MatFormFieldModule} from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import {MatSelectModule} from '@angular/material/select';
-import { ReactiveFormsModule } from '@angular/forms';
-import { FormsModule } from '@angular/forms';
+
+
+
+import { RelatoriosComponent } from './relatorios/relatorios.component';
+import { NovoRelatorioComponent } from './novo-relatorio/novo-relatorio.component';
+import { MaterialModule } from './material.module';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    RelatoriosComponent,
+    NovoRelatorioComponent
   ],
   imports: [
     BrowserModule,
-    ReactiveFormsModule,
-    FormsModule,
-    MatButtonModule,
-    MatInputModule,
-    MatSelectModule,
     AppRoutingModule,
-    MatFormFieldModule,
+    MaterialModule,
+
     AngularFireModule.initializeApp(environment.firebase),
     AngularFirestoreModule.enablePersistence(),
     AngularFireStorageModule,
@@ -42,9 +42,12 @@ import { FormsModule } from '@angular/forms';
       // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000'
     }),
-      BrowserAnimationsModule
+    BrowserAnimationsModule
   ],
   providers: [],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
+  schemas: [
+    CUSTOM_ELEMENTS_SCHEMA
+  ],
 })
 export class AppModule { }
