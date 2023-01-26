@@ -1,92 +1,141 @@
 import { Component } from '@angular/core';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-export interface Item { nome: string; sobrenome: string }
-import { RelatoriosService } from '../app/services/relatorios.service';
-import { Firestore, collectionData, collection } from '@angular/fire/firestore';
-import { AngularFirestore, AngularFirestoreCollection } from '@angular/fire/compat/firestore';
-import { Observable } from 'rxjs';
-import { GuardsCheckEnd } from '@angular/router';
+import { AngularFireAuth } from '@angular/fire/compat/auth';
+import { MatIconRegistry } from '@angular/material/icon';
+import { DomSanitizer } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
+import { RelatoriosService } from './services/relatorios.service';
+import * as auth from 'firebase/auth';
+import { AlertDialog } from './components/alert-dialog/alert-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
+
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  title = 'hidroimagem';
+  title = 'Hidroimagem';
+  static mostrarBackButton: boolean = false;
 
-  USERS = [
-    {
-      "id": 1,
-      "name": "Leanne Graham",
-      "email": "sincere@april.biz",
-      "phone": "1-770-736-8031 x56442"
-    },
-    {
-      "id": 2,
-      "name": "Ervin Howell",
-      "email": "shanna@melissa.tv",
-      "phone": "010-692-6593 x09125"
-    },
-    {
-      "id": 3,
-      "name": "Clementine Bauch",
-      "email": "nathan@yesenia.net",
-      "phone": "1-463-123-4447",
-    },
-    {
-      "id": 4,
-      "name": "Patricia Lebsack",
-      "email": "julianne@kory.org",
-      "phone": "493-170-9623 x156"
-    },
-    {
-      "id": 5,
-      "name": "Chelsey Dietrich",
-      "email": "lucio@annie.ca",
-      "phone": "(254)954-1289"
-    },
-    {
-      "id": 6,
-      "name": "Mrs. Dennis",
-      "email": "karley@jasper.info",
-      "phone": "1-477-935-8478 x6430"
+  mostrarLoadingBar: boolean = true;
+
+  usuario: any;
+  static usuarioLogado: boolean = false;
+  usuariosPermitidos: any[] = [];
+
+  constructor(public dialog: MatDialog, private router: Router, public afAuth: AngularFireAuth, private rel: RelatoriosService, private domSanitizer: DomSanitizer, private matIconRegistry: MatIconRegistry) {
+    this.matIconRegistry.addSvgIcon("logo", this.domSanitizer.bypassSecurityTrustResourceUrl("assets/svg/Google.svg"));
+
+    this.rel.buscarUsuariosPermitidos().subscribe((usuariosPermitidos: any) => {
+      this.usuariosPermitidos = usuariosPermitidos;
+
+      this.afAuth.authState.subscribe((user) => {
+        if (user) {
+          console.log("logado", user);
+
+          this.usuario = user;
+          localStorage.setItem('user', JSON.stringify(this.usuario));
+          this.validarUsuario();
+
+        } else {
+          var usuarioNaoLogado = localStorage.getItem('user');
+          console.log("Não logado2", usuarioNaoLogado);
+          if (usuarioNaoLogado && usuarioNaoLogado != "undefined" && usuarioNaoLogado != null) {
+            this.usuario = JSON.parse(usuarioNaoLogado);
+            this.validarUsuario();
+          }
+
+        }
+
+        this.mostrarLoadingBar = false;
+      });
+
+
+
+    });
+
+
+  }
+
+  public logout() {
+    return this.afAuth.signOut().then(() => {
+      localStorage.removeItem('user');
+      AppComponent.usuarioLogado = false;
+
+      this.router.navigateByUrl('/');
+
+    });
+  }
+  back() {
+    this.router.navigateByUrl('/');
+
+  }
+  public setUsuarioLogado(logado: boolean) {
+    AppComponent.usuarioLogado = logado;
+  }
+
+  public getMostrarBackButton(): boolean {
+    return AppComponent.mostrarBackButton;
+  }
+
+  public isUsuarioLogado(): boolean {
+    return AppComponent.usuarioLogado;
+  }
+
+  public googleAuth() {
+
+    return this.AuthLogin(new auth.GoogleAuthProvider()).then((data: any) => {
+      this.usuario = data.user;
+      this.validarUsuario();
+    });
+  }
+
+  private validarUsuario() {
+
+
+
+
+    let usuarioPermitido = this.usuariosPermitidos.find((usuario: any) => usuario.email == this.usuario.email);
+
+
+    console.log("usuarioEmal", this.usuario.email);
+
+    console.log("usuarioPermitido", usuarioPermitido);
+    if (usuarioPermitido) {
+      AppComponent.usuarioLogado = true;
+
+    } else {
+
+
+      let dialogRef = this.dialog.open(AlertDialog, {
+        data: { titulo: "Usuário não Cadastrado", mensagem: "O e-mail " + this.usuario.email + " não está autorizado à acessar o sistema. Entre em contato com o responsável." }
+      });
+      dialogRef.afterClosed().subscribe((result: any) => {
+        this.afAuth.signOut().then(() => {
+          localStorage.removeItem('user');
+          AppComponent.usuarioLogado = false;
+        });
+
+      });
+
     }
-  ];
-
-
-  relatorios: any = [];
-  nome : string = "";
-  sobrenome : string = "";
-
-  constructor(private relatoriosService: RelatoriosService) {
-  relatoriosService.buscarRelatorios().subscribe((relatorios)=>{
-    this.relatorios = relatorios;
-  });
+    this.mostrarLoadingBar = false;
   }
 
+  private AuthLogin(provider: any) {
+    return this.afAuth
+      .signInWithPopup(provider)
 
-  public adicionarRelatorio(){
-    alert(this.nome);
-    this.relatoriosService.addRelatorio({
-      nome: this.nome,
-      sobrenome: this.sobrenome
-    });
+      .catch((error) => {
+        console.log("Error Sign-in", error);
+      });
+  }
+  criarNovoRelatorio() {
+
+    this.router.navigateByUrl('/novo');
+
   }
 
-
-  public openPDF(): void {
-    let DATA: any = document.getElementById('htmlData');
-    html2canvas(DATA).then((canvas) => {
-      let fileWidth = 208;
-      let fileHeight = (canvas.height * fileWidth) / canvas.width;
-      const FILEURI = canvas.toDataURL('image/png');
-      let PDF = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
-      PDF.addImage(FILEURI, 'PNG', 0, position, fileWidth, fileHeight);
-      PDF.save('angular-demo.pdf');
-    });
-  }
 
 }

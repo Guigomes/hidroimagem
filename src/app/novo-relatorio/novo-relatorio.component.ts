@@ -1,10 +1,797 @@
-import { Component } from '@angular/core';
+
+
+import { Component, Inject, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
+import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatTableDataSource } from '@angular/material/table';
+import { RelatoriosService } from '../services/relatorios.service';
+import autoTable from 'jspdf-autotable'
+
+import { Evento } from '../models/evento';
+import { ActivatedRoute, Router } from '@angular/router';
+import Resumo from '../models/resumo';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import Relatorio from '../models/relatorio';
+import Imagem from '../models/imagem';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { AngularFireStorage, AngularFireStorageReference, AngularFireUploadTask } from '@angular/fire/compat/storage';
+import { DatePipe } from '@angular/common';
+
+import { MatStepper } from '@angular/material/stepper';
+
+
+import { finalize, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { AppComponent } from '../app.component';
+import { base64Header2 } from '../models/headerBase64-2';
+import { simbolBase64 } from '../models/simbolBase64';
+import { DecimalPipe } from '@angular/common';
+import { ProgressDialog } from '../components/progress-dialog/progress-dialog.component';
+
 
 @Component({
   selector: 'app-novo-relatorio',
   templateUrl: './novo-relatorio.component.html',
-  styleUrls: ['./novo-relatorio.component.css']
+  styleUrls: ['./novo-relatorio.component.scss']
 })
-export class NovoRelatorioComponent {
+export class NovoRelatorioComponent implements OnInit {
 
+  public ufs: String[] = ["AC",
+    "AL",
+    "AM",
+    "AP",
+    "BA",
+    "CE",
+    "DF",
+    "ES",
+    "GO",
+    "MA",
+    "MG",
+    "MS",
+    "MT",
+    "PA",
+    "PB",
+    "PE",
+    "PI",
+    "PR",
+    "RJ",
+    "RN",
+    "RO",
+    "RR",
+    "RS",
+    "SC",
+    "SE",
+    "SP",
+    "TO"];
+
+  private idRelatorio: string = "";
+  private idResumo: string = "";
+  private uploadEvent: any;
+  public ufSelecionada: String = "";
+  public mostrarProgressBar: boolean = false;
+  public title = "Novo Relatório";
+
+
+  private relatorio: Relatorio | null = null;
+
+
+
+  public observacoesFormGroup: FormGroup = new FormGroup({
+    observacoes: new FormControl('')
+  });
+
+  public informacoesGeraisFormGroup: FormGroup;
+  constructor(private decimalPipe: DecimalPipe, private datePipe: DatePipe, private storage: AngularFireStorage, private router: Router, private _snackBar: MatSnackBar, private route: ActivatedRoute, private relatoriosService: RelatoriosService, private _formBuilder: FormBuilder, public dialog: MatDialog, public fb: FormBuilder) {
+    AppComponent.mostrarBackButton = true;
+
+    this.informacoesGeraisFormGroup = new FormGroup({
+      titulo: new FormControl(''),
+      cliente: new FormControl(''),
+      local: new FormControl(''),
+      cidade: new FormControl(''),
+      data: new FormControl(this.getDataHojeFormatada()),
+      revestimento: new FormControl(''),
+      poco: new FormControl(''),
+      diametro: new FormControl(''),
+      reducao: new FormControl(null),
+      nivel: new FormControl(null),
+      uf: new FormControl(''),
+
+      fimRevestimento: new FormControl(null),
+
+      profundidade: new FormControl(null),
+
+
+    });
+
+    this.route.queryParams.subscribe(params => {
+      this.idRelatorio = params['idRelatorio'];
+      this.idResumo = params['id'];
+      console.log("idRelatorio", this.idRelatorio);
+      console.log("idResumo", this.idResumo);
+
+      if (this.idRelatorio !== undefined && this.idRelatorio.length > 0) {
+        this.title = "Editar Relatório";
+        this.mostrarProgressBar = true;
+        this.relatoriosService.buscarRelatorio(this.idRelatorio).subscribe((relatorio: Relatorio | undefined) => {
+          console.log("relatorio", relatorio);
+          if (relatorio) {
+            this.relatorio = relatorio;
+          }
+          this.informacoesGeraisFormGroup = new FormGroup({
+            titulo: new FormControl(relatorio?.titulo),
+            cliente: new FormControl(relatorio?.cliente),
+            local: new FormControl(relatorio?.local),
+            cidade: new FormControl(relatorio?.cidade),
+            data: new FormControl(relatorio?.data),
+            revestimento: new FormControl(relatorio?.revestimento),
+            poco: new FormControl(relatorio?.poco),
+            diametro: new FormControl(relatorio?.diametro),
+            reducao: new FormControl(relatorio?.reducao),
+            uf: new FormControl(relatorio?.uf),
+
+            nivel: new FormControl(relatorio?.nivel),
+
+            fimRevestimento: new FormControl(relatorio?.fimRevestimento),
+
+            profundidade: new FormControl(relatorio?.profundidade),
+
+
+          });
+          this.observacoesFormGroup = new FormGroup({
+            observacoes: new FormControl(relatorio?.observacoes)
+          });
+          if (relatorio?.eventos && relatorio.eventos.length > 0) {
+            this.eventos = relatorio.eventos;
+          }
+          this.eventos.push({
+            profundidade: "",
+            evento: "",
+            obs: "",
+            position: this.eventos.length + 1
+          });
+          this.dataSource = new MatTableDataSource<Evento>(this.eventos);
+          this.items = [];
+          if (relatorio?.imagens && relatorio.imagens.length > 0) {
+            relatorio.imagens.forEach((imagem: any) => {
+              this.items.push({
+                id: this.items.length + 1,
+
+                url: imagem.url,
+                legenda: imagem.legenda
+              });
+
+            });
+
+          }
+          console.log("EVENTOS", this.eventos);
+          this.mostrarProgressBar = false;
+        }, (error) => {
+          this.toast("Erro ao buscar relatório: " + error);
+          this.mostrarProgressBar = false;
+
+        });
+      } else {
+        this.eventos.push({
+          profundidade: "",
+          evento: "",
+          obs: "",
+          position: this.eventos.length + 1
+        });
+        this.dataSource = new MatTableDataSource<Evento>(this.eventos);
+
+      }
+    });
+
+
+
+
+    this.uploadForm = this.fb.group({
+      avatar: [null],
+      legenda: ['']
+    });
+
+
+  }
+  ngOnInit() {
+
+  }
+
+  goForward(stepper: MatStepper) {
+    stepper.next();
+  }
+  private getDataHojeFormatada() {
+    var data = new Date();
+    return data.getFullYear() + "-" + data.getMonth() + 1 + "-" + data.getDate();
+
+  }
+
+
+
+  eventos: Evento[] = [
+
+  ];
+
+
+
+
+  animal: string = "";
+  name: string = "";
+  imageURL: string = "";
+  uploadForm: FormGroup;
+
+  displayedColumns: string[] = ['position', 'profundidade', 'evento', 'obs'];
+
+  dataSource = new MatTableDataSource<Evento>(this.eventos);
+
+  items: Array<Imagem> = [
+
+
+  ];
+
+  public ampliarImagem(imagem: any) {
+
+    console.log("IMAGEM SELECIONADA", imagem);
+    var dialogRef = this.dialog.open(MostrarImagemDialog, {
+      data: {
+        imagem: imagem,
+      },
+    });
+    dialogRef.afterClosed().subscribe(result => {
+      console.log("RESUT", result);
+      if (result == "ALTERAR") {
+        var imagemAtualizar = this.relatorio?.imagens.find((imagemRelatorio: any) => imagemRelatorio.url == imagem.url);
+        if (imagemAtualizar && imagemAtualizar.legenda != imagem.legenda) {
+          imagemAtualizar.legenda = imagem.legenda;
+
+          console.log("Relatorio Imagem", this.relatorio);
+          this.salvar();
+        }
+      } else if (result == "EXCLUIR") {
+        console.log("EXLUIR");
+        if (this.relatorio) {
+          this.relatorio.imagens = this.relatorio.imagens.filter((imagemRelatorio: Imagem) => imagemRelatorio.url != imagem.url);
+          this.salvar("Imagem excluída com sucesso");
+
+        }
+      }
+    });
+  }
+
+  private buildNovoRelatorio() {
+    var novoRelatorio = this.informacoesGeraisFormGroup.value;
+
+    novoRelatorio.observacoes = this.observacoesFormGroup.value.observacoes;
+
+    let novosEventos = this.eventos.filter((evento) => evento.evento.length > 0 && evento.profundidade.length > 0);
+
+    console.log("Novos Eventos", novosEventos);
+
+    novoRelatorio.eventos = novosEventos;
+    if (this.relatorio && this.relatorio?.imagens) {
+      novoRelatorio.imagens = this.relatorio?.imagens;
+    }
+
+    return novoRelatorio;
+  }
+  salvar(mensagemToast :string = "Relatório alterado com sucesso") {
+    if (!this.informacoesGeraisFormGroup.valid) {
+      this.toast("O campos Titulo, Cliente e Data devem ser preenchidos");
+    } else {
+      this.mostrarProgressBar = true;
+      console.log("id", this.idRelatorio);
+
+      console.log("eventos", this.eventos);
+      if (this.idRelatorio) {
+
+        console.log("Relatorio Antigo", this.relatorio);
+        console.log("Relatorio Novo", this.informacoesGeraisFormGroup.value);
+
+        if (this.relatorio?.titulo != this.informacoesGeraisFormGroup.value.titulo || this.relatorio?.data != this.informacoesGeraisFormGroup.value.data || this.relatorio?.cliente != this.informacoesGeraisFormGroup.value.cliente) {
+          var resumo: Resumo = {
+            titulo: this.informacoesGeraisFormGroup.value.titulo,
+            data: this.informacoesGeraisFormGroup.value.data,
+            cliente: this.informacoesGeraisFormGroup.value.cliente,
+            idRelatorio: this.idRelatorio
+          };
+          this.relatoriosService.updateResumo(this.idResumo, resumo);
+        }
+
+        var novoRelatorio = this.buildNovoRelatorio();
+        console.log("Novo Relatório", novoRelatorio);
+        this.relatoriosService.updateRelatorio(this.idRelatorio, novoRelatorio).then(() => {
+          this.toast(mensagemToast);
+
+
+          this.mostrarProgressBar = false;
+        }).catch((error: any) => {
+          this.toast("Houve um erro ao salvar o relatório: " + error);
+          this.mostrarProgressBar = false;
+        });
+      } else {
+        console.log("Primeira Vez");
+
+        var novoRelatorio = this.buildNovoRelatorio();
+
+
+        this.relatoriosService.addRelatorio(novoRelatorio).then((novoRelatorio) => {
+
+          console.log("Novo relatorio", novoRelatorio.id);
+          var resumo: Resumo = {
+            titulo: this.informacoesGeraisFormGroup.value.titulo,
+            data: this.informacoesGeraisFormGroup.value.data,
+            cliente: this.informacoesGeraisFormGroup.value.cliente,
+            idRelatorio: novoRelatorio.id
+          }
+          this.relatoriosService.addResumo(resumo).then(() => {
+
+            this.toast("Relatório Salvo com sucesso");
+
+
+            this.mostrarProgressBar = false;
+
+          }).catch((error: any) => {
+            this.toast("Houve um erro ao salvar o relatório: " + error);
+            this.mostrarProgressBar = false;
+          });
+        }).catch((error: any) => {
+          this.toast("Houve um erro ao salvar o relatório: " + error);
+          this.mostrarProgressBar = false;
+        });
+
+      }
+    }
+  }
+
+
+
+  validarInserirNovaLinha(index: number) {
+
+    if (index + 1 == this.eventos.length) {
+      this.eventos.push({
+        profundidade: "",
+        evento: "",
+        obs: "",
+        position: this.eventos.length + 1
+      });
+
+      this.dataSource = new MatTableDataSource<Evento>(this.eventos);
+    }
+  }
+
+  showPreview(event: any) {
+    this.mostrarProgressBar = true;
+    const file = event?.target.files[0];
+    this.uploadForm.patchValue({
+      avatar: file
+    });
+
+    this.uploadForm.get('avatar')?.updateValueAndValidity();
+
+    // File Preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.imageURL = reader.result as string;
+      this.uploadEvent = event;
+      this.mostrarProgressBar = false;
+    }
+    reader.readAsDataURL(file)
+  }
+
+  private upload(event: any, legenda: string) {
+    var dialogRef = this.dialog.open(ProgressDialog, {
+      data: {
+mensagem: "Anexando a imagem...."
+      },
+    });
+    const id = Math.random().toString(36).substring(2);
+    let ref: AngularFireStorageReference = this.storage.ref(id);
+    let task: AngularFireUploadTask = ref.put(event.target.files[0]);
+    let uploadProgress: Observable<number | undefined> = task.percentageChanges();
+    console.log("uploadProgress", uploadProgress);
+    let downloadURL: Observable<string>;
+    task.snapshotChanges().pipe(
+      finalize(() => {
+        downloadURL = ref.getDownloadURL()
+        downloadURL.subscribe(url => {
+          var novoRelatorio = this.buildNovoRelatorio();
+
+          if (novoRelatorio.imagens !== undefined && novoRelatorio.imagens.length > 0) {
+            novoRelatorio.imagens.push({
+              legenda,
+              url
+            });
+          } else {
+            novoRelatorio.imagens = [];
+            novoRelatorio.imagens.push({
+              legenda,
+              url
+            });
+          }
+          this.relatoriosService.updateRelatorio(this.idRelatorio, novoRelatorio).then(()=>{
+            dialogRef.close();
+            this.imageURL = "";
+            this.uploadForm.value.legenda = "";
+            this.toast("Imagem anexada com sucesso.");
+          });
+
+
+        });
+      })
+    )
+      .subscribe();
+
+  }
+  // Submit Form
+  submit() {
+
+    if (this.uploadForm.valid) {
+      console.log("SUBMIT");
+      /*
+            this.items = [
+              ...this.items,
+              {
+                id: this.items.length + 1,
+
+                url:
+                  this.imageURL,
+                legenda:
+                  this.uploadForm.value.legenda,
+
+              }];
+
+      */
+      this.upload(this.uploadEvent, this.uploadForm.value.legenda);
+
+
+    } else {
+      this.toast("Informe a legenda da imagem");
+    }
+
+  }
+
+  public validarSubmit(stepper: any) {
+
+    if (!this.informacoesGeraisFormGroup.valid) {
+      this.toast("O campos Titulo, Cliente e Data devem ser preenchidos");
+    } else {
+      stepper.next();
+    }
+    console.log("FirstForm", this.informacoesGeraisFormGroup.valid);
+
+
+
+  }
+
+  private formatDecimalNumber(number: number | string) {
+    return this.decimalPipe.transform(number, "1.2-2")?.replace(".", ",");
+  }
+  public preview() {
+    console.log("GERAR", new Date());
+    var dialogRef = this.dialog.open(ProgressDialog, {
+      data: {
+mensagem: "Gerando o Relatório em PDF"
+      },
+    });
+    dialogRef.afterOpened().subscribe(()=>{
+      console.log("ABRIU", dialogRef);
+      let endereco = "Rua Lilia Elisa Eberle Lupo, 501 - casa 187 - Salto Grande. \n CEP: 14.803-886  Araraquara-SP. Fone: (16) 3322-0619.\nwww.hidroimagem.com.br";
+      let textoCapa = "O trabalho de perfilagem ótica é composto de DVD contendo imagens coloridas geradas por câmeras introduzidas simultaneamente em um poço e um relatório com informações sobre as imagens captadas pelas câmeras. A combinação das duas situações auxilia a tomada de decisões no ato de trabalhar o poço.\n A HIDROIMAGEM SERVIÇOS DE PERFILAGEM, não se responsabiliza por tais decisões.";
+      if (this.relatorio) {
+        const doc = new jsPDF({
+          orientation: "portrait",
+          unit: "cm",
+          format: 'a4'
+        });
+
+        var width = doc.internal.pageSize.getWidth();
+
+        this.addCapa(this.relatorio, doc, textoCapa, endereco);
+
+        this.novaPagina(doc, endereco);
+
+        this.addInformacoesGerais(this.relatorio, doc);
+
+        this.addObservacoes(this.relatorio, doc, endereco);
+
+        this.novaPagina(doc, endereco);
+
+        this.addEventos(this.relatorio, doc, endereco);
+
+        this.novaPagina(doc, endereco);
+
+        this.addImagens(this.relatorio, doc, endereco);
+
+        this.novaPagina(doc, endereco);
+
+        doc.setFont("", 'bold');
+
+        doc.setFontSize(14);
+
+        doc.setLineWidth(0.03);
+
+        doc.setDrawColor(0, 0, 0);
+
+        doc.line(5, 25.5, 16, 25.5);
+        doc.text("Gilberto Gonçalves Domingos", width / 2, 26, { align: 'center', maxWidth: 21 });
+        doc.text("Diretor", width / 2, 26.5, { align: 'center', maxWidth: 21 });
+
+
+        doc.save(this.relatorio.titulo + " - " + this.relatorio?.cliente + ".pdf");
+        console.log("Terminou", new Date());
+        dialogRef.close();
+      }
+    });
+
+
+
+
+  }
+  addImagens(relatorio: Relatorio, doc: jsPDF, endereco: string) {
+    var width = doc.internal.pageSize.getWidth();
+
+    doc.setFont("", 'bold');
+
+    doc.setFontSize(20);
+
+    doc.text("Foto Imagem", width / 2, 5, { align: 'center', maxWidth: 21 });
+
+    var heightInicialImagens = 6.5;
+
+    doc.setFontSize(12);
+
+    doc.setFont("", 'normal');
+
+    var x = 1;
+
+    relatorio.imagens.forEach((imagem: any) => {
+
+      doc.addImage(imagem.url, 'PNG', x, heightInicialImagens, 9.5, 8);
+      if (x == 1) {
+        doc.text(imagem.legenda, 5.75, heightInicialImagens + 8.5, { align: 'center', maxWidth: 9.5 });
+        x = 11;
+      } else {
+        x = 1;
+        doc.text(imagem.legenda, 15.5, heightInicialImagens + 8.5, { align: 'center', maxWidth: 9.5 });
+        heightInicialImagens += 11;
+        if (heightInicialImagens == 28.5) {
+          this.novaPagina(doc, endereco);
+          heightInicialImagens = 6.5;
+        }
+      }
+
+
+    });
+  }
+  addEventos(relatorio: Relatorio, doc: jsPDF, endereco: string) {
+    var width = doc.internal.pageSize.getWidth();
+
+    doc.setFont("", 'bold');
+    doc.setFontSize(20);
+    doc.text("Características do Poço", width / 2, 5, { align: 'center', maxWidth: 21 });
+
+
+    doc.setFont("", 'normal');
+    doc.setFontSize(18);
+
+
+
+    var eventosBody: any[] = [];
+
+    relatorio.eventos.forEach((evento) => {
+      if (evento.evento && evento.evento.length > 0) {
+        eventosBody.push([evento.profundidade, evento.evento, evento.obs]);
+      }
+
+    });
+
+    autoTable(doc, {
+      startY: 6,
+      headStyles: {
+        valign: 'middle',
+        halign: 'center'
+      },
+      margin: { top: 5, bottom: 4 },
+      showHead: "everyPage",
+      didDrawPage: function (data) {
+        doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+
+        doc.setFontSize(12);
+
+        doc.text(endereco, width / 2, 28.5, { align: 'center', maxWidth: 16 });
+
+      },
+      columnStyles: {
+        0: { cellWidth: 6, halign: 'center' },
+        1: { cellWidth: 6, halign: 'center', },
+        2: { cellWidth: 6, halign: 'center', }
+      },
+
+      styles: {
+        overflow: 'linebreak',
+        valign: 'middle',
+        fontSize: 14
+      },
+      head: [["Profundidade (m)", "Evento", "Observações"]],
+
+      body: eventosBody,
+    });
+
+
+
+  }
+  private addObservacoes(relatorio: Relatorio, doc: jsPDF, endereco: string) {
+    if (relatorio.observacoes) {
+      var width = doc.internal.pageSize.getWidth();
+
+      var observacoes = relatorio.observacoes.split("\n");
+
+
+
+      doc.text("Observações", width / 2, 19, { align: 'center', maxWidth: 21 });
+
+      doc.setFontSize(14);
+
+      doc.setFont("", 'normal');
+
+      var observacoesTable: any[] = [];
+      observacoes.forEach((observacao: string) => {
+        if (observacao.length > 0) {
+          observacoesTable.push([observacao]);
+        }
+      });
+      if (observacoesTable.length > 0) {
+        autoTable(doc, {
+          theme: "plain",
+          startY: 19,
+
+          headStyles: {
+            valign: 'middle',
+            halign: 'center'
+          },
+
+          didDrawCell: function (data) {
+            if (data.column.index === 0 && data.cell.section === 'body') {
+
+              var textPos = data.cell.getTextPos();
+
+              doc.addImage(simbolBase64, 2.4, textPos.y - 0.3, 0.5, 0.5);
+            }
+          },
+          margin: { top: 5, left: 3, bottom: 4 },
+          showHead: "everyPage",
+          didDrawPage: function (data) {
+            doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+
+            doc.setFontSize(12);
+
+            doc.text(endereco, width / 2, 28.5, { align: 'center', maxWidth: 16 });
+
+          },
+          columnStyles: {
+            0: { cellWidth: 17, halign: 'left' },
+          },
+
+          styles: {
+            overflow: 'linebreak',
+            valign: 'middle',
+            fontSize: 14
+          },
+          head: [[""]],
+
+          body: observacoesTable,
+        });
+
+      }
+    }
+
+  }
+
+
+  private addCapa(relatorio: Relatorio, doc: jsPDF, textoCapa: string, endereco: string) {
+    var width = doc.internal.pageSize.getWidth();
+
+    doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+
+    doc.setFont("Times New Roman");
+    doc.setFontSize(30);
+
+    doc.text(relatorio.titulo, width / 2, 9, { align: 'center', maxWidth: 16 });
+
+
+    doc.text("Cliente: ", width / 2, 13, { align: 'center', maxWidth: 21 });
+
+    doc.setFontSize(25);
+
+    doc.text(relatorio.cliente, width / 2, 14, { align: 'center', maxWidth: 21 });
+
+    var data = relatorio.data.substring(8, 10) + "/" + relatorio.data.substring(5, 7) + "/" + relatorio.data.substring(0, 4);
+
+    doc.setFontSize(30);
+
+    doc.text("LOCAL E DATA: ", width / 2, 16, { align: 'center', maxWidth: 21 });
+
+    doc.setFontSize(25);
+
+    doc.text(relatorio.local + " " + data, width / 2, 17, { align: 'center', maxWidth: 21 });
+
+    doc.setFontSize(12);
+
+    doc.setFont("", 'bold');
+
+    doc.text(textoCapa, 3, 24, { align: 'justify', maxWidth: 15 });
+
+    doc.setFont("", 'normal');
+    doc.text(endereco, width / 2, 28.5, { align: 'center', maxWidth: 16 });
+
+  }
+
+  private addInformacoesGerais(relatorio: Relatorio, doc: jsPDF) {
+    var width = doc.internal.pageSize.getWidth();
+
+    doc.setFont("", 'bold');
+
+    doc.setFontSize(20);
+
+    doc.text("Informações gerais", width / 2, 5, { align: 'center', maxWidth: 21 });
+
+    var cidade = relatorio.cidade ? relatorio.cidade : "";
+    if (cidade.length > 0 && relatorio.uf && relatorio.uf.length > 0) {
+      cidade += " - " + relatorio.uf;
+    }
+
+    var bodyTable = [['Data', this.datePipe.transform(relatorio.data, 'dd/MM/yyyy')],
+    ['Cidade', cidade],
+    ['Local da obra', relatorio.local ? relatorio.local : ""],
+    ['Poço', relatorio.poco ? relatorio.poco : ""],
+    ['Revestimento', relatorio.revestimento ? relatorio.revestimento : ""],
+    ['Diâmetro', relatorio.diametro ? relatorio.diametro + "\"" : ""],
+    ['Nível estático', relatorio.nivel ? this.formatDecimalNumber(relatorio.nivel) + " m" : ""],
+    ];
+
+    console.log("RELATORIO", relatorio);
+    if(relatorio.fimRevestimento && String(relatorio.fimRevestimento).length > 0){
+      bodyTable.push(['Fim revestimento', relatorio.fimRevestimento ? this.formatDecimalNumber(relatorio.fimRevestimento) + " m" : ""]);
+    }
+
+    if(relatorio.reducao && relatorio.reducao.length > 0){
+      bodyTable.push( ['Redução', relatorio.reducao ? this.formatDecimalNumber(relatorio.reducao) + "" : ""]);
+    }
+    bodyTable.push(['Profundidade', relatorio.profundidade ? this.formatDecimalNumber(relatorio.profundidade) + " m" : ""]);
+    autoTable(doc, {
+      startY: 7,
+      styles: {
+        overflow: 'linebreak',
+        fontSize: 18
+      },
+
+
+      body: bodyTable,
+    });
+
+
+  }
+  private novaPagina(doc: jsPDF, endereco: string) {
+    var width = doc.internal.pageSize.getWidth();
+
+    doc.addPage();
+    doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+
+    doc.setFontSize(12);
+    doc.text(endereco, width / 2, 28.5, { align: 'center', maxWidth: 16 });
+
+  }
+
+  private toast(message: string) {
+    this._snackBar.open(message, "Fechar", { duration: 7000 });
+  }
+}
+
+@Component({
+  selector: 'mostrar-imagem-dialog.',
+  templateUrl: 'mostrar-imagem-dialog.html',
+})
+export class MostrarImagemDialog {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any) { }
 }

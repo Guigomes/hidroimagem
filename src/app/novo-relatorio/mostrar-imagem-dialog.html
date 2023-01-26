@@ -1,0 +1,24 @@
+<div mat-dialog-content>
+  <div fxLayout="row" fxLayoutGap="30px">
+
+  <img src="{{data.imagem.url}}" style="max-width: 50em; max-height: 50em;">
+    <mat-form-field appearance="outline">
+      <mat-label>Legenda</mat-label>
+
+      <textarea
+      matInput
+      rows="15"
+      maxlength="200"
+      [(ngModel)]="data.imagem.legenda"
+      placeholder="Legenda da Imagem"
+    ></textarea>
+    <span style="font-size: 10px; color: #7eb8e0;">{{data.imagem.legenda.length}}/200</span>
+    </mat-form-field>
+
+  </div>
+
+</div>
+<div mat-dialog-actions>
+  <button mat-raised-button mat-dialog-close="EXCLUIR">Excluir Imagem</button>
+  <button mat-raised-button color="primary" mat-dialog-close="ALTERAR" cdkFocusInitial>Alterar Legenda</button>
+</div>
