@@ -15,10 +15,14 @@
     font-weight: bold;
     text-align: center;
   }
+
+  .displayName{
+    display: none;
+  }
 .header{
   margin-top: 0.5em;
   white-space:pre-wrap;
-  word-break: break-all;
+  font-size: 14px;
 
 }
 }

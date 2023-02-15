@@ -1,6 +1,6 @@
 
 
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, HostListener, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatTableDataSource } from '@angular/material/table';
@@ -75,12 +75,16 @@ export class NovoRelatorioComponent implements OnInit {
 
   private relatorio: Relatorio | null = null;
 
-
+  public getScreenWidth: any;
 
   public observacoesFormGroup: FormGroup = new FormGroup({
     observacoes: new FormControl('')
   });
 
+  @HostListener('window:resize', ['$event'])
+  onWindowResize() {
+    this.getScreenWidth = window.innerWidth;
+  }
   public informacoesGeraisFormGroup: FormGroup;
   constructor(private decimalPipe: DecimalPipe, private datePipe: DatePipe, private storage: AngularFireStorage, private router: Router, private _snackBar: MatSnackBar, private route: ActivatedRoute, private relatoriosService: RelatoriosService, private _formBuilder: FormBuilder, public dialog: MatDialog, public fb: FormBuilder) {
     AppComponent.mostrarBackButton = true;
@@ -104,6 +108,7 @@ export class NovoRelatorioComponent implements OnInit {
 
 
     });
+    console.log("DATA", this.informacoesGeraisFormGroup.value.data);
 
     this.route.queryParams.subscribe(params => {
       this.idRelatorio = params['idRelatorio'];
@@ -194,16 +199,17 @@ export class NovoRelatorioComponent implements OnInit {
 
 
   }
-  ngOnInit() {
+ 
 
-  }
+  ngOnInit() {
+    this.getScreenWidth = window.innerWidth;
+}
 
   goForward(stepper: MatStepper) {
     stepper.next();
   }
   private getDataHojeFormatada() {
-    var data = new Date();
-    return data.getFullYear() + "-" + data.getMonth() + 1 + "-" + data.getDate();
+    return new Date().toISOString().slice(0, 10)
 
   }
 
@@ -313,19 +319,23 @@ export class NovoRelatorioComponent implements OnInit {
         console.log("Primeira Vez");
 
         var novoRelatorio = this.buildNovoRelatorio();
+    
 
 
-        this.relatoriosService.addRelatorio(novoRelatorio).then((novoRelatorio) => {
+        this.relatoriosService.addRelatorio(novoRelatorio).then((novoRelatorioSalvo) => {
+          this.idRelatorio = novoRelatorioSalvo.id;
+          console.log("Novo relatorio", novoRelatorioSalvo.id);
+          this.relatorio = novoRelatorio; 
 
-          console.log("Novo relatorio", novoRelatorio.id);
           var resumo: Resumo = {
             titulo: this.informacoesGeraisFormGroup.value.titulo,
             data: this.informacoesGeraisFormGroup.value.data,
             cliente: this.informacoesGeraisFormGroup.value.cliente,
-            idRelatorio: novoRelatorio.id
+            idRelatorio: novoRelatorioSalvo.id
           }
-          this.relatoriosService.addResumo(resumo).then(() => {
+          this.relatoriosService.addResumo(resumo).then((resumoSalvo) => {
 
+            this.idResumo = resumoSalvo.id;
             this.toast("Relatório Salvo com sucesso");
 
 

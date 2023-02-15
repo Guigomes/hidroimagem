@@ -27,34 +27,49 @@ export class AppComponent {
   constructor(public dialog: MatDialog, private router: Router, public afAuth: AngularFireAuth, private rel: RelatoriosService, private domSanitizer: DomSanitizer, private matIconRegistry: MatIconRegistry) {
     this.matIconRegistry.addSvgIcon("logo", this.domSanitizer.bypassSecurityTrustResourceUrl("assets/svg/Google.svg"));
 
-    this.rel.buscarUsuariosPermitidos().subscribe((usuariosPermitidos: any) => {
-      this.usuariosPermitidos = usuariosPermitidos;
+    var usuario = localStorage.getItem('user');
 
-      this.afAuth.authState.subscribe((user) => {
-        if (user) {
-          console.log("logado", user);
+    if (usuario !== undefined && usuario !== null) {
+      this.usuario = JSON.parse(usuario);
+      AppComponent.usuarioLogado = true;
+      this.mostrarLoadingBar = false;
 
-          this.usuario = user;
-          localStorage.setItem('user', JSON.stringify(this.usuario));
-          this.validarUsuario();
+    } else {
+      this.rel.buscarUsuariosPermitidos().subscribe((usuariosPermitidos: any) => {
+        this.usuariosPermitidos = usuariosPermitidos;
 
-        } else {
-          var usuarioNaoLogado = localStorage.getItem('user');
-          console.log("Não logado2", usuarioNaoLogado);
-          if (usuarioNaoLogado && usuarioNaoLogado != "undefined" && usuarioNaoLogado != null) {
-            this.usuario = JSON.parse(usuarioNaoLogado);
+        this.afAuth.authState.subscribe((user) => {
+          if (user) {
+            console.log("logado", user);
+
+            this.usuario = user;
+            localStorage.setItem('user', JSON.stringify(this.usuario));
             this.validarUsuario();
+
+          } else {
+            var usuarioNaoLogado = localStorage.getItem('user');
+          
+            console.log("Não logado2", usuarioNaoLogado);
+            if (usuarioNaoLogado && usuarioNaoLogado != "undefined" && usuarioNaoLogado != null) {
+              this.usuario = JSON.parse(usuarioNaoLogado);
+              this.validarUsuario();
+            }
+
           }
 
-        }
+          this.mostrarLoadingBar = false;
+        }, (error: any) => {
+          var usuarioNaoLogado = localStorage.getItem('user');
+          alert(JSON.stringify(error));
+          alert(JSON.stringify(usuarioNaoLogado));
+        });
 
-        this.mostrarLoadingBar = false;
+
+
+      }, (error) => {
+        alert("ERROR -SUBSCRIBE " + error);
       });
-
-
-
-    });
-
+    }
 
   }
 
@@ -104,7 +119,7 @@ export class AppComponent {
     console.log("usuarioPermitido", usuarioPermitido);
     if (usuarioPermitido) {
       AppComponent.usuarioLogado = true;
-
+      localStorage.setItem('user', JSON.stringify(this.usuario));
     } else {
 
 
@@ -125,7 +140,7 @@ export class AppComponent {
 
   private AuthLogin(provider: any) {
     return this.afAuth
-      .signInWithPopup(provider)
+      .signInWithRedirect(provider)
 
       .catch((error) => {
         console.log("Error Sign-in", error);

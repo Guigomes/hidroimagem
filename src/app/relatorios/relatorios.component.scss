@@ -23,3 +23,42 @@ color: white;
 .demo-row-is-clicked {
   font-weight: bold;
 }
+.tabela-resumos mat-cell  {
+  font-size: 12px;
+}
+.tabela-resumos{
+min-width: 80vw;
+
+}
+@media (max-width: 600px){
+  .tabela-resumos mat-cell  {
+    text-align: center;
+    font-size: 9px;
+  }  
+  .tabela-resumos{
+    min-width: 10vw;
+    
+    }
+
+  .tabela-resumos mat-cell  {
+    text-align: center;
+    font-size: 9px;
+  }  
+
+  .titulo-selecionar{
+    font-size: 12px;
+  }
+}
+
+.mat-column-cliente {
+  flex: 0 0 25%;
+}
+.mat-column-data {
+  flex: 0 0 20%;
+}
+.mat-column-titulo {
+  flex: 0 0 35%;
+}
+.mat-column-action {
+  flex: 0 0 20%;
+}

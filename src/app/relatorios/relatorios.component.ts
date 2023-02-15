@@ -32,7 +32,6 @@ export class RelatoriosComponent {
 
 
 
-
     AppComponent.mostrarBackButton = false;
     this.buscarRelatorios();
 

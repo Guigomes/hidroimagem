@@ -1,10 +1,12 @@
 
 .bigger-card {
-  width: 1200px;
-
-min-height: 600px;
+  width: 70vw;
 }
-
+@media (max-width: 600px){
+  .bigger-card {
+    width: 100vw;
+  }
+}
 .big-form-field .mat-form-field {
   width: 75%;
 }

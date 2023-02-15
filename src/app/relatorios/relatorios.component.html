@@ -23,69 +23,68 @@
       fxLayoutAlign="center center"
       style="margin-top: 10px; margin-bottom: 10px"
       *ngIf="isUsuarioLogado()"
+     
     >
 
-      <h1>Selecione o relatório que deseja editar ou crie um novo.</h1>
+      <h1 class="titulo-selecionar">Selecione o relatório que deseja editar ou crie um novo.</h1>
     </div>
-    <div fxLayout="row" fxLayoutAlign="center"  *ngIf="isUsuarioLogado()">
-      <mat-card class="example-card" fxLayout="column">
-        <mat-card-header>
-          <div mat-card-avatar><mat-icon>description</mat-icon></div>
-          <mat-card-title>Meus relatórios</mat-card-title>
-        </mat-card-header>
-        <mat-card-content *ngIf="!mostrarProgressBar" fxLayout="column">
-          <mat-divider></mat-divider>
+ 
 
+    <div
+      fxLayout="row"
+      fxLayoutAlign="center center"
+   
+      *ngIf="isUsuarioLogado()"
+     
+    >
           <p *ngIf="resumos.length == 0">
             Você ainda não criou nenhum relatório. Clique no botão acima para
             criar.
           </p>
 
-          <table
+          <mat-table
             *ngIf="resumos.length > 0"
-            mat-table
+            
             [dataSource]="dataSource"
-            class="mat-elevation-z8"
+            class="mat-elevation-z8 tabela-resumos"
           >
             <ng-container matColumnDef="cliente">
-              <th mat-header-cell *matHeaderCellDef>Cliente</th>
-              <td mat-cell *matCellDef="let element; let i = index"   (click)="abrirRelatorio(element)">
+              <mat-header-cell *matHeaderCellDef>Cliente</mat-header-cell>
+              <mat-cell  *matCellDef="let element; let i = index"   (click)="abrirRelatorio(element)">
                 {{ element.cliente }}
-              </td>
+              </mat-cell>
             </ng-container>
             <ng-container matColumnDef="data">
-              <th mat-header-cell *matHeaderCellDef>Data</th>
-              <td mat-cell *matCellDef="let element; let i = index"  (click)="abrirRelatorio(element)">
+              <mat-header-cell  *matHeaderCellDef>Data</mat-header-cell>
+              <mat-cell  *matCellDef="let element; let i = index"  (click)="abrirRelatorio(element)">
                 {{ element.data  | date : 'dd/MM/yyyy'}}
-              </td>
+              </mat-cell>
             </ng-container>
 
             <!-- Name Column -->
             <ng-container matColumnDef="titulo">
-              <th mat-header-cell *matHeaderCellDef>Titulo</th>
-              <td mat-cell *matCellDef="let element; let i = index"  (click)="abrirRelatorio(element)">
+              <mat-header-cell  *matHeaderCellDef>Titulo</mat-header-cell>
+              <mat-cell *matCellDef="let element; let i = index"  (click)="abrirRelatorio(element)">
                 {{ element.titulo }}
-              </td>
+              </mat-cell>
             </ng-container>
             <!-- Name Column -->
             <ng-container matColumnDef="action">
-              <th mat-header-cell *matHeaderCellDef></th>
-              <td mat-cell *matCellDef="let element; let i = index"  >
+              <mat-header-cell  *matHeaderCellDef></mat-header-cell>
+              <mat-cell *matCellDef="let element; let i = index"  >
                 <button  mat-button (click)="deletar(element)">
                   <mat-icon>delete</mat-icon>
                 </button>
-              </td>
+              </mat-cell>
             </ng-container>
-            <tr mat-header-row *matHeaderRowDef="colunasTabelaResumos"></tr>
-            <tr
-              mat-row
+            <mat-header-row  *matHeaderRowDef="colunasTabelaResumos"></mat-header-row >
+            <mat-row
+              
 
               [class.demo-row-is-clicked]="clickedRows.has(row)"
               *matRowDef="let row; columns: colunasTabelaResumos"
-            ></tr>
-          </table>
-        </mat-card-content>
-      </mat-card>
-    </div>
+            ></mat-row>
+          </mat-table>
+      </div>
   </div>
 </div>

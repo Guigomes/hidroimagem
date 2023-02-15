@@ -7,12 +7,12 @@ mat-button
 <mat-icon color="white">arrow_back</mat-icon>
 
 </button>
-<img src="../assets/logo2.png" width="80vw">
+<img src="../assets/logo2.png" width="80vw" class="displayName">
 
   <p style="text-align: center;" class="header">Sistema de Relatórios da Hidroimagem</p>
   <span class="example-spacer"></span>
 
-  <span *ngIf="isUsuarioLogado()">{{usuario.displayName}}</span>
+  <span *ngIf="isUsuarioLogado()" class="displayName">{{usuario.displayName}}</span>
   <button *ngIf="!mostrarLoadingBar && isUsuarioLogado()"
   (click)="logout()"
   mat-button
