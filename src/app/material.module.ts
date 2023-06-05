@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 
 import {MatGridListModule} from '@angular/material/grid-list';
 import {MatDividerModule} from '@angular/material/divider';
-
+import {MatDatepickerModule} from '@angular/material/datepicker';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,12 +16,15 @@ import {MatTableModule} from '@angular/material/table';
 import {MatDialogModule} from '@angular/material/dialog';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
 import {MatIconModule} from '@angular/material/icon';
 
 @NgModule({
     imports: [
       MatProgressSpinnerModule,
+      MatPaginatorModule,
+      MatDatepickerModule, 
         MatFormFieldModule,
         MatInputModule,
         MatToolbarModule,
@@ -43,6 +46,7 @@ import {MatIconModule} from '@angular/material/icon';
       MatToolbarModule,
       MatIconModule,
       MatSelectModule,
+      MatPaginatorModule,
       ReactiveFormsModule,
       MatButtonModule,
       FormsModule,
@@ -50,6 +54,7 @@ import {MatIconModule} from '@angular/material/icon';
       MatGridListModule,
       MatDividerModule,
       MatTableModule,
+      MatDatepickerModule, 
       MatDialogModule,
       MatProgressSpinnerModule
     ]

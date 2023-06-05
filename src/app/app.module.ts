@@ -30,6 +30,9 @@ import { ProgressDialogModule } from './components/progress-dialog/progress-dial
 import { HttpClientModule } from '@angular/common/http';
 import { AlertDialog } from './components/alert-dialog/alert-dialog.component';
 import { AlertDialogModule } from './components/alert-dialog/alert-dialog.module';
+import { MatPaginatorIntl } from '@angular/material/paginator';
+import { CustomMatPaginatorIntl } from './components/paginator.tradutor';
+import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 
 const maskConfigFunction: () => Partial<IConfig> = () => {
   return {
@@ -47,6 +50,7 @@ const maskConfigFunction: () => Partial<IConfig> = () => {
 
   ],
   imports: [
+    MatNativeDateModule,
     HttpClientModule,
     ProgressDialogModule,
     AlertDialogModule,
@@ -70,7 +74,12 @@ const maskConfigFunction: () => Partial<IConfig> = () => {
     }),
     BrowserAnimationsModule
   ],
-  providers: [DatePipe, DecimalPipe],
+  providers: [DatePipe, DecimalPipe,  {
+    provide: MatPaginatorIntl, 
+    useClass: CustomMatPaginatorIntl
+  },
+  {provide: MAT_DATE_LOCALE, useValue: 'en-GB'}
+],
   entryComponents:[
     RelatorioExcluirDialog,
     MostrarImagemDialog

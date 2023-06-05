@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { AfterViewInit, Component, Inject, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import * as auth from 'firebase/auth';
@@ -11,6 +11,7 @@ import { AppComponent } from '../app.component';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { AlertDialog } from '../components/alert-dialog/alert-dialog.component';
+import { MatPaginator } from '@angular/material/paginator';
 
 
 
@@ -28,6 +29,15 @@ export class RelatoriosComponent {
   clickedRows = new Set<any>();
   usuarioLogado: boolean = false;
   usuario: any;
+  tempPaginator : any;
+  dataInicial : any = new Date();
+  dataFinal : any = new Date();
+  @ViewChild(MatPaginator, { static: false })
+  set paginator(value: MatPaginator) {
+    this.tempPaginator = value;
+
+  }
+
   constructor(private router: Router, private rel: RelatoriosService, public dialog: MatDialog, private _snackBar: MatSnackBar) {
 
 
@@ -41,16 +51,21 @@ export class RelatoriosComponent {
   private buscarRelatorios() {
 
     this.rel.buscarRelatorios().subscribe((result: any) => {
+this.resumos = result;
+this.dataSource = new MatTableDataSource<Resumo>(this.resumos);
+this.dataSource.paginator = this.tempPaginator;
 
-
-      this.resumos = result;
-      this.dataSource = new MatTableDataSource<Resumo>(this.resumos);
       this.mostrarProgressBar = false;
+    
     });
   }
 
   public isUsuarioLogado() {
     return AppComponent.usuarioLogado;
+  }
+
+  consultar(){
+    alert("TESTE");
   }
   deletar(element: any) {
 

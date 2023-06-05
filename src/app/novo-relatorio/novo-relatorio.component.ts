@@ -199,11 +199,11 @@ export class NovoRelatorioComponent implements OnInit {
 
 
   }
- 
+
 
   ngOnInit() {
     this.getScreenWidth = window.innerWidth;
-}
+  }
 
   goForward(stepper: MatStepper) {
     stepper.next();
@@ -281,77 +281,86 @@ export class NovoRelatorioComponent implements OnInit {
 
     return novoRelatorio;
   }
-  salvar(mensagemToast :string = "Relatório alterado com sucesso") {
-    if (!this.informacoesGeraisFormGroup.valid) {
-      this.toast("O campos Titulo, Cliente e Data devem ser preenchidos");
-    } else {
-      this.mostrarProgressBar = true;
-      console.log("id", this.idRelatorio);
-
-      console.log("eventos", this.eventos);
-      if (this.idRelatorio) {
-
-        console.log("Relatorio Antigo", this.relatorio);
-        console.log("Relatorio Novo", this.informacoesGeraisFormGroup.value);
-
-        if (this.relatorio?.titulo != this.informacoesGeraisFormGroup.value.titulo || this.relatorio?.data != this.informacoesGeraisFormGroup.value.data || this.relatorio?.cliente != this.informacoesGeraisFormGroup.value.cliente) {
-          var resumo: Resumo = {
-            titulo: this.informacoesGeraisFormGroup.value.titulo,
-            data: this.informacoesGeraisFormGroup.value.data,
-            cliente: this.informacoesGeraisFormGroup.value.cliente,
-            idRelatorio: this.idRelatorio
-          };
-          this.relatoriosService.updateResumo(this.idResumo, resumo);
-        }
-
-        var novoRelatorio = this.buildNovoRelatorio();
-        console.log("Novo Relatório", novoRelatorio);
-        this.relatoriosService.updateRelatorio(this.idRelatorio, novoRelatorio).then(() => {
-          this.toast(mensagemToast);
+  salvar(mensagemToast: string = "Relatório alterado com sucesso") {
+    return new Promise((resolve, reject) => {
 
 
-          this.mostrarProgressBar = false;
-        }).catch((error: any) => {
-          this.toast("Houve um erro ao salvar o relatório: " + error);
-          this.mostrarProgressBar = false;
-        });
+      if (!this.informacoesGeraisFormGroup.valid) {
+        this.toast("O campos Titulo, Cliente e Data devem ser preenchidos");
       } else {
-        console.log("Primeira Vez");
+        this.mostrarProgressBar = true;
+        console.log("id", this.idRelatorio);
 
-        var novoRelatorio = this.buildNovoRelatorio();
-    
+        console.log("eventos", this.eventos);
+        if (this.idRelatorio) {
 
+          console.log("Relatorio Antigo", this.relatorio);
+          console.log("Relatorio Novo", this.informacoesGeraisFormGroup.value);
 
-        this.relatoriosService.addRelatorio(novoRelatorio).then((novoRelatorioSalvo) => {
-          this.idRelatorio = novoRelatorioSalvo.id;
-          console.log("Novo relatorio", novoRelatorioSalvo.id);
-          this.relatorio = novoRelatorio; 
-
-          var resumo: Resumo = {
-            titulo: this.informacoesGeraisFormGroup.value.titulo,
-            data: this.informacoesGeraisFormGroup.value.data,
-            cliente: this.informacoesGeraisFormGroup.value.cliente,
-            idRelatorio: novoRelatorioSalvo.id
+          if (this.relatorio?.titulo != this.informacoesGeraisFormGroup.value.titulo || this.relatorio?.data != this.informacoesGeraisFormGroup.value.data || this.relatorio?.cliente != this.informacoesGeraisFormGroup.value.cliente) {
+            var resumo: Resumo = {
+              titulo: this.informacoesGeraisFormGroup.value.titulo,
+              data: this.informacoesGeraisFormGroup.value.data,
+              cliente: this.informacoesGeraisFormGroup.value.cliente,
+              idRelatorio: this.idRelatorio
+            };
+            this.relatoriosService.updateResumo(this.idResumo, resumo);
           }
-          this.relatoriosService.addResumo(resumo).then((resumoSalvo) => {
 
-            this.idResumo = resumoSalvo.id;
-            this.toast("Relatório Salvo com sucesso");
+          var novoRelatorio = this.buildNovoRelatorio();
+          console.log("Novo Relatório", novoRelatorio);
+          this.relatoriosService.updateRelatorio(this.idRelatorio, novoRelatorio).then(() => {
+            this.toast(mensagemToast);
 
 
             this.mostrarProgressBar = false;
-
+            resolve(true);
           }).catch((error: any) => {
             this.toast("Houve um erro ao salvar o relatório: " + error);
             this.mostrarProgressBar = false;
+            reject();
           });
-        }).catch((error: any) => {
-          this.toast("Houve um erro ao salvar o relatório: " + error);
-          this.mostrarProgressBar = false;
-        });
+        } else {
+          console.log("Primeira Vez");
 
+          var novoRelatorio = this.buildNovoRelatorio();
+
+          console.log("novoRelatorio", novoRelatorio);
+
+          this.relatoriosService.addRelatorio(novoRelatorio).then((novoRelatorioSalvo) => {
+            this.idRelatorio = novoRelatorioSalvo.id;
+            console.log("Novo relatorio", novoRelatorioSalvo.id);
+            this.relatorio = novoRelatorio;
+
+            var resumo: Resumo = {
+              titulo: this.informacoesGeraisFormGroup.value.titulo,
+              data: this.informacoesGeraisFormGroup.value.data,
+              cliente: this.informacoesGeraisFormGroup.value.cliente,
+              idRelatorio: novoRelatorioSalvo.id
+            }
+            this.relatoriosService.addResumo(resumo).then((resumoSalvo) => {
+
+              this.idResumo = resumoSalvo.id;
+              this.toast("Relatório Salvo com sucesso");
+
+
+              this.mostrarProgressBar = false;
+              resolve(true);
+
+            }).catch((error: any) => {
+              this.toast("Houve um erro ao salvar o relatório: " + error);
+              this.mostrarProgressBar = false;
+              reject();
+            });
+          }).catch((error: any) => {
+            this.toast("Houve um erro ao salvar o relatório: " + error);
+            this.mostrarProgressBar = false;
+            reject();
+          });
+
+        }
       }
-    }
+    });
   }
 
 
@@ -392,7 +401,7 @@ export class NovoRelatorioComponent implements OnInit {
   private upload(event: any, legenda: string) {
     var dialogRef = this.dialog.open(ProgressDialog, {
       data: {
-mensagem: "Anexando a imagem...."
+        mensagem: "Anexando a imagem...."
       },
     });
     const id = Math.random().toString(36).substring(2);
@@ -406,7 +415,7 @@ mensagem: "Anexando a imagem...."
         downloadURL = ref.getDownloadURL()
         downloadURL.subscribe(url => {
           var novoRelatorio = this.buildNovoRelatorio();
-
+          console.log("NovoRelatorioImagem", novoRelatorio);
           if (novoRelatorio.imagens !== undefined && novoRelatorio.imagens.length > 0) {
             novoRelatorio.imagens.push({
               legenda,
@@ -419,7 +428,7 @@ mensagem: "Anexando a imagem...."
               url
             });
           }
-          this.relatoriosService.updateRelatorio(this.idRelatorio, novoRelatorio).then(()=>{
+          this.relatoriosService.updateRelatorio(this.idRelatorio, novoRelatorio).then(() => {
             dialogRef.close();
             this.imageURL = "";
             this.uploadForm.value.legenda = "";
@@ -438,20 +447,20 @@ mensagem: "Anexando a imagem...."
 
     if (this.uploadForm.valid) {
       console.log("SUBMIT");
-      /*
-            this.items = [
-              ...this.items,
-              {
-                id: this.items.length + 1,
 
-                url:
-                  this.imageURL,
-                legenda:
-                  this.uploadForm.value.legenda,
+      this.items = [
+        ...this.items,
+        {
+          id: this.items.length + 1,
 
-              }];
+          url:
+            this.imageURL,
+          legenda:
+            this.uploadForm.value.legenda,
 
-      */
+        }];
+
+
       this.upload(this.uploadEvent, this.uploadForm.value.legenda);
 
 
@@ -466,6 +475,7 @@ mensagem: "Anexando a imagem...."
     if (!this.informacoesGeraisFormGroup.valid) {
       this.toast("O campos Titulo, Cliente e Data devem ser preenchidos");
     } else {
+
       stepper.next();
     }
     console.log("FirstForm", this.informacoesGeraisFormGroup.valid);
@@ -478,61 +488,74 @@ mensagem: "Anexando a imagem...."
     return this.decimalPipe.transform(number, "1.2-2")?.replace(".", ",");
   }
   public preview() {
-    console.log("GERAR", new Date());
-    var dialogRef = this.dialog.open(ProgressDialog, {
-      data: {
-mensagem: "Gerando o Relatório em PDF"
-      },
+    this.salvar().then(() => {
+      console.log("GERAR", new Date());
+      var dialogRef = this.dialog.open(ProgressDialog, {
+        data: {
+          mensagem: "Gerando o Relatório em PDF"
+        },
+      });
+      dialogRef.afterOpened().subscribe(() => {
+        console.log("ABRIU", dialogRef);
+  
+        console.log("relatorio", this.relatorio);
+        let endereco = "Rua Lilia Elisa Eberle Lupo, 501 - casa 187 - Salto Grande. \n CEP: 14.803-886  Araraquara-SP. Fone: (16) 3322-0619.\nwww.hidroimagem.com.br";
+        let textoCapa = "O trabalho de perfilagem ótica é composto de DVD contendo imagens coloridas geradas por câmeras introduzidas simultaneamente em um poço e um relatório com informações sobre as imagens captadas pelas câmeras. A combinação das duas situações auxilia a tomada de decisões no ato de trabalhar o poço.\n A HIDROIMAGEM SERVIÇOS DE PERFILAGEM, não se responsabiliza por tais decisões.";
+        if (this.relatorio) {
+          const doc = new jsPDF({
+            orientation: "portrait",
+            unit: "cm",
+            format: 'a4'
+          });
+  
+          console.log("REL 1");
+          var width = doc.internal.pageSize.getWidth();
+  
+          this.addCapa(this.relatorio, doc, textoCapa, endereco);
+  
+          this.novaPagina(doc, endereco);
+  
+          this.addInformacoesGerais(this.relatorio, doc);
+  
+          this.addObservacoes(this.relatorio, doc, endereco);
+  
+          console.log("REL 2");
+          this.novaPagina(doc, endereco);
+  
+          this.addEventos(this.relatorio, doc, endereco);
+  
+          this.novaPagina(doc, endereco);
+  
+          this.addImagens(this.relatorio, doc, endereco);
+  
+          console.log("REL 3");
+          /*
+                  this.novaPagina(doc, endereco);
+          
+                  doc.setFont("", 'bold');
+          
+                  doc.setFontSize(14);
+          
+                  doc.setLineWidth(0.03);
+          
+                  doc.setDrawColor(0, 0, 0);
+          
+                  doc.line(5, 25.5, 16, 25.5);
+                  doc.text("Gilberto Gonçalves Domingos", width / 2, 26, { align: 'center', maxWidth: 21 });
+                  doc.text("Diretor", width / 2, 26.5, { align: 'center', maxWidth: 21 });
+          */
+  
+          doc.save(this.relatorio.titulo + " - " + this.relatorio?.cliente + ".pdf");
+          console.log("Terminou", new Date());
+          dialogRef.close();
+        } else {
+          this.toast("Erro ao gerar PDF. Relatório não encontrado.");
+          dialogRef.close();
+  
+        }
+      });
     });
-    dialogRef.afterOpened().subscribe(()=>{
-      console.log("ABRIU", dialogRef);
-      let endereco = "Rua Lilia Elisa Eberle Lupo, 501 - casa 187 - Salto Grande. \n CEP: 14.803-886  Araraquara-SP. Fone: (16) 3322-0619.\nwww.hidroimagem.com.br";
-      let textoCapa = "O trabalho de perfilagem ótica é composto de DVD contendo imagens coloridas geradas por câmeras introduzidas simultaneamente em um poço e um relatório com informações sobre as imagens captadas pelas câmeras. A combinação das duas situações auxilia a tomada de decisões no ato de trabalhar o poço.\n A HIDROIMAGEM SERVIÇOS DE PERFILAGEM, não se responsabiliza por tais decisões.";
-      if (this.relatorio) {
-        const doc = new jsPDF({
-          orientation: "portrait",
-          unit: "cm",
-          format: 'a4'
-        });
-
-        var width = doc.internal.pageSize.getWidth();
-
-        this.addCapa(this.relatorio, doc, textoCapa, endereco);
-
-        this.novaPagina(doc, endereco);
-
-        this.addInformacoesGerais(this.relatorio, doc);
-
-        this.addObservacoes(this.relatorio, doc, endereco);
-
-        this.novaPagina(doc, endereco);
-
-        this.addEventos(this.relatorio, doc, endereco);
-
-        this.novaPagina(doc, endereco);
-
-        this.addImagens(this.relatorio, doc, endereco);
-
-        this.novaPagina(doc, endereco);
-
-        doc.setFont("", 'bold');
-
-        doc.setFontSize(14);
-
-        doc.setLineWidth(0.03);
-
-        doc.setDrawColor(0, 0, 0);
-
-        doc.line(5, 25.5, 16, 25.5);
-        doc.text("Gilberto Gonçalves Domingos", width / 2, 26, { align: 'center', maxWidth: 21 });
-        doc.text("Diretor", width / 2, 26.5, { align: 'center', maxWidth: 21 });
-
-
-        doc.save(this.relatorio.titulo + " - " + this.relatorio?.cliente + ".pdf");
-        console.log("Terminou", new Date());
-        dialogRef.close();
-      }
-    });
+  
 
 
 
@@ -554,25 +577,28 @@ mensagem: "Gerando o Relatório em PDF"
     doc.setFont("", 'normal');
 
     var x = 1;
+    console.log("imagems", relatorio.imagens);
 
-    relatorio.imagens.forEach((imagem: any) => {
-
-      doc.addImage(imagem.url, 'PNG', x, heightInicialImagens, 9.5, 8);
-      if (x == 1) {
-        doc.text(imagem.legenda, 5.75, heightInicialImagens + 8.5, { align: 'center', maxWidth: 9.5 });
-        x = 11;
-      } else {
-        x = 1;
-        doc.text(imagem.legenda, 15.5, heightInicialImagens + 8.5, { align: 'center', maxWidth: 9.5 });
-        heightInicialImagens += 11;
+    if (relatorio.imagens) {
+      relatorio.imagens.forEach((imagem: any) => {
         if (heightInicialImagens == 28.5) {
           this.novaPagina(doc, endereco);
           heightInicialImagens = 6.5;
         }
-      }
+        doc.addImage(imagem.url, 'PNG', x, heightInicialImagens, 9.5, 8);
+        if (x == 1) {
+          doc.text(imagem.legenda, 5.75, heightInicialImagens + 8.5, { align: 'center', maxWidth: 9.5 });
+          x = 11;
+        } else {
+          x = 1;
+          doc.text(imagem.legenda, 15.5, heightInicialImagens + 8.5, { align: 'center', maxWidth: 9.5 });
+          heightInicialImagens += 11;
+
+        }
 
 
-    });
+      });
+    }
   }
   addEventos(relatorio: Relatorio, doc: jsPDF, endereco: string) {
     var width = doc.internal.pageSize.getWidth();
@@ -605,7 +631,7 @@ mensagem: "Gerando o Relatório em PDF"
       margin: { top: 5, bottom: 4 },
       showHead: "everyPage",
       didDrawPage: function (data) {
-        doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+        doc.addImage(base64Header2, 'PNG', 1, 1, 19, 3);
 
         doc.setFontSize(12);
 
@@ -672,7 +698,7 @@ mensagem: "Gerando o Relatório em PDF"
           margin: { top: 5, left: 3, bottom: 4 },
           showHead: "everyPage",
           didDrawPage: function (data) {
-            doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+            doc.addImage(base64Header2, 'PNG', 1, 1, 19, 3);
 
             doc.setFontSize(12);
 
@@ -700,15 +726,16 @@ mensagem: "Gerando o Relatório em PDF"
 
 
   private addCapa(relatorio: Relatorio, doc: jsPDF, textoCapa: string, endereco: string) {
+
     var width = doc.internal.pageSize.getWidth();
 
-    doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+    doc.addImage(base64Header2, 'PNG', 1, 1, 19, 3);
 
     doc.setFont("Times New Roman");
+
     doc.setFontSize(30);
 
     doc.text(relatorio.titulo, width / 2, 9, { align: 'center', maxWidth: 16 });
-
 
     doc.text("Cliente: ", width / 2, 13, { align: 'center', maxWidth: 21 });
 
@@ -761,12 +788,12 @@ mensagem: "Gerando o Relatório em PDF"
     ];
 
     console.log("RELATORIO", relatorio);
-    if(relatorio.fimRevestimento && String(relatorio.fimRevestimento).length > 0){
+    if (relatorio.fimRevestimento && String(relatorio.fimRevestimento).length > 0) {
       bodyTable.push(['Fim revestimento', relatorio.fimRevestimento ? this.formatDecimalNumber(relatorio.fimRevestimento) + " m" : ""]);
     }
 
-    if(relatorio.reducao && relatorio.reducao.length > 0){
-      bodyTable.push( ['Redução', relatorio.reducao ? this.formatDecimalNumber(relatorio.reducao) + "" : ""]);
+    if (relatorio.reducao && relatorio.reducao.length > 0) {
+      bodyTable.push(['Redução', relatorio.reducao ? relatorio.reducao + "" : ""]);
     }
     bodyTable.push(['Profundidade', relatorio.profundidade ? this.formatDecimalNumber(relatorio.profundidade) + " m" : ""]);
     autoTable(doc, {
@@ -786,7 +813,7 @@ mensagem: "Gerando o Relatório em PDF"
     var width = doc.internal.pageSize.getWidth();
 
     doc.addPage();
-    doc.addImage(base64Header2, 'PNG', 1, 1, 20, 3);
+    doc.addImage(base64Header2, 'PNG', 1, 1, 19, 3);
 
     doc.setFontSize(12);
     doc.text(endereco, width / 2, 28.5, { align: 'center', maxWidth: 16 });
