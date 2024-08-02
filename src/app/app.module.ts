@@ -33,6 +33,8 @@ import { AlertDialogModule } from './components/alert-dialog/alert-dialog.module
 import { MatPaginatorIntl } from '@angular/material/paginator';
 import { CustomMatPaginatorIntl } from './components/paginator.tradutor';
 import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
+import {DragDropModule} from '@angular/cdk/drag-drop';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 
 const maskConfigFunction: () => Partial<IConfig> = () => {
   return {
@@ -50,6 +52,7 @@ const maskConfigFunction: () => Partial<IConfig> = () => {
 
   ],
   imports: [
+    DragDropModule,
     MatNativeDateModule,
     HttpClientModule,
     ProgressDialogModule,
@@ -72,10 +75,11 @@ const maskConfigFunction: () => Partial<IConfig> = () => {
       // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000'
     }),
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    MatAutocompleteModule
   ],
   providers: [DatePipe, DecimalPipe,  {
-    provide: MatPaginatorIntl, 
+    provide: MatPaginatorIntl,
     useClass: CustomMatPaginatorIntl
   },
   {provide: MAT_DATE_LOCALE, useValue: 'en-GB'}

@@ -13,30 +13,46 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { AlertDialog } from '../components/alert-dialog/alert-dialog.component';
 import { MatPaginator } from '@angular/material/paginator';
 
+import {MatSort, Sort, MatSortModule} from '@angular/material/sort';
 
 
 @Component({
   selector: 'app-relatorios',
   templateUrl: './relatorios.component.html',
-  styleUrls: ['./relatorios.component.scss']
+  styleUrls: ['./relatorios.component.scss'],
+
 })
 export class RelatoriosComponent {
 
   public resumos: any[] = [];
-  public colunasTabelaResumos: string[] = ['cliente', 'data', 'titulo', 'action'];
+  public colunasTabelaResumos: string[] = ['cliente', 'data', 'cidade','poco', 'action'];
   public dataSource = new MatTableDataSource<Resumo>([]);
   public mostrarProgressBar: boolean = true;
   clickedRows = new Set<any>();
   usuarioLogado: boolean = false;
   usuario: any;
   tempPaginator : any;
+  tempSort : any;
   dataInicial : any = new Date();
   dataFinal : any = new Date();
+
   @ViewChild(MatPaginator, { static: false })
   set paginator(value: MatPaginator) {
     this.tempPaginator = value;
 
   }
+
+  @ViewChild(MatSort, { static: false })
+  set sort(value: MatSort) {
+    this.tempSort = value;
+
+  }
+
+  ngAfterViewInit() {
+    this.dataSource.sort = this.tempSort;
+  }
+
+
 
   constructor(private router: Router, private rel: RelatoriosService, public dialog: MatDialog, private _snackBar: MatSnackBar) {
 
@@ -51,12 +67,14 @@ export class RelatoriosComponent {
   private buscarRelatorios() {
 
     this.rel.buscarRelatorios().subscribe((result: any) => {
+      result.sort((a : Resumo, b : Resumo) => (a.data > b.data ? -1 : 1));
+
 this.resumos = result;
 this.dataSource = new MatTableDataSource<Resumo>(this.resumos);
 this.dataSource.paginator = this.tempPaginator;
-
+this.dataSource.sort = this.tempSort;
       this.mostrarProgressBar = false;
-    
+
     });
   }
 

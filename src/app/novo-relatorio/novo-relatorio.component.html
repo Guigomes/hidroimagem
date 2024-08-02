@@ -80,7 +80,7 @@
                   <mat-form-field appearance="outline">
                     <mat-label>Poço</mat-label>
 
-                    <input matInput placeholder="Poço" formControlName="poco" type="number" />
+                    <input matInput placeholder="Poço" formControlName="poco" type="text" />
                   </mat-form-field>
                 </div>
               </div>
@@ -165,12 +165,17 @@
                   <mat-card-title style="font-size: 14px;">Evento {{i+1}}</mat-card-title>
                   <mat-card-content>
                     <mat-form-field appearance="outline">
-                      <input matInput placeholder="Profundidade" [(ngModel)]="data.profundidade"
+                      <input matInput placeholder="Profundidade"    [(ngModel)]="data.profundidade"
                         (blur)="validarInserirNovaLinha(i)" />
                     </mat-form-field>
                     <mat-form-field appearance="outline">
                       <input matInput placeholder="Evento" [(ngModel)]="data.evento"
-                        (blur)="validarInserirNovaLinha(i)" />
+                        (blur)="validarInserirNovaLinha(i)"(ngModelChange)="onInputChange($event)" [matAutocomplete]="auto"/>
+                        <mat-autocomplete #auto="matAutocomplete">
+                          <mat-option *ngFor="let option of filteredOptions" [value]="option">
+                            {{option}}
+                          </mat-option>
+                        </mat-autocomplete>
                     </mat-form-field>
 
                     <mat-form-field appearance="outline">
@@ -181,16 +186,17 @@
                 </mat-card>
               </div>
             </div>
-            <mat-table [dataSource]="dataSource" class="mat-elevation-z8" *ngIf="getScreenWidth >600">
+            <mat-table [dataSource]="dataSource"  cdkDropList  (cdkDropListDropped)="drop($event)" class="mat-elevation-z8" *ngIf="getScreenWidth >600">
               <ng-container matColumnDef="position">
                 <mat-header-cell *matHeaderCellDef></mat-header-cell>
-                <mat-cell *matCellDef="let element; let i = index">
+                <mat-cell *matCellDef="let element; let i = index" >
+
                   {{ element.position }}
                 </mat-cell>
               </ng-container>
               <ng-container matColumnDef="profundidade">
                 <mat-header-cell *matHeaderCellDef>Profundidade (m)</mat-header-cell>
-                <mat-cell *matCellDef="let element; let i = index" (click)="validarInserirNovaLinha(i)">
+                <mat-cell *matCellDef="let element; let i = index" (click)="validarInserirNovaLinha(i)" >
                   <mat-form-field appearance="outline">
                     <input matInput placeholder="Profundidade" [(ngModel)]="dataSource.data[i].profundidade"
                       (blur)="validarInserirNovaLinha(i)" />
@@ -201,10 +207,15 @@
               <!-- Name Column -->
               <ng-container matColumnDef="evento">
                 <mat-header-cell *matHeaderCellDef>Evento</mat-header-cell>
-                <mat-cell *matCellDef="let element; let i = index" (click)="validarInserirNovaLinha(i)">
+                <mat-cell *matCellDef="let element; let i = index" (click)="validarInserirNovaLinha(i)" >
                   <mat-form-field appearance="outline">
                     <input matInput placeholder="Evento" [(ngModel)]="dataSource.data[i].evento"
-                      (blur)="validarInserirNovaLinha(i)" />
+                      (blur)="validarInserirNovaLinha(i)" (ngModelChange)="onInputChange($event)" [matAutocomplete]="auto"/>
+                      <mat-autocomplete #auto="matAutocomplete">
+                        <mat-option *ngFor="let option of filteredOptions" [value]="option">
+                          {{option}}
+                        </mat-option>
+                      </mat-autocomplete>
                   </mat-form-field>
                 </mat-cell>
               </ng-container>
@@ -212,16 +223,18 @@
               <!-- Weight Column -->
               <ng-container matColumnDef="obs">
                 <mat-header-cell *matHeaderCellDef>Observação</mat-header-cell>
-                <mat-cell *matCellDef="let element; let i = index" (click)="validarInserirNovaLinha(i)">
+                <mat-cell *matCellDef="let element; let i = index" (click)="validarInserirNovaLinha(i)" >
                   <mat-form-field appearance="outline">
                     <input matInput placeholder="Observação" [(ngModel)]="dataSource.data[i].obs"
                       (click)="validarInserirNovaLinha(i)" (blur)="validarInserirNovaLinha(i)" />
                   </mat-form-field>
+
+
                 </mat-cell>
               </ng-container>
 
               <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-              <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+              <mat-row *matRowDef="let row; columns: displayedColumns" cdkDrag [cdkDragData]="row"  ></mat-row>
             </mat-table>
 
             <div fxLayout="row" fxLayoutGap="30px" style="margin-top: 10px">
@@ -237,9 +250,9 @@
             <div fxLayout="column" *ngIf="getScreenWidth <= 600">
               <div fxLayout="column" fxFlex *ngIf="imageURL == undefined || imageURL.length == 0">
 
-                <mat-grid-list cols="3" rowHeight="1:1">
+                <mat-grid-list cols="3" rowHeight="1:1" cdkDropList (cdkDropListDropped)="dropImage($event)">
 
-                  <mat-grid-tile *ngFor="let item of items" (click)="ampliarImagem(item)"><img class="img-responsive"
+                  <mat-grid-tile *ngFor="let item of items" (click)="ampliarImagem(item)" cdkDrag [cdkDragData]="item"><img class="img-responsive"
                       src="{{ item.url }}" style="max-width: 240px; object-fit: cover" /></mat-grid-tile>
 
                 </mat-grid-list>
@@ -251,7 +264,7 @@
                 <button type="button" mat-raised-button color="primary"
                   style="position: relative; margin-bottom: 2em; margin-left: 1em;"
                   (click)="fileInput.click()">Selelecionar a imagem...</button>
-            
+
 
 
               <div *ngIf="imageURL && imageURL !== ''">
@@ -260,7 +273,7 @@
 
               <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="10px" *ngIf="imageURL && imageURL !== ''"
                 style="margin-top: 10px;">
-           
+
 
                 <div fxLayout="row" style="vertical-align: middle;" >
                   <mat-form-field appearance="outline">
@@ -287,13 +300,19 @@
 
             <div fxLayout="row" *ngIf="getScreenWidth > 600">
               <div fxLayout="column" fxFlex="45">
-                <mat-grid-list cols="3" rowHeight="1:1">
+                <div cdkDropList cdkDropListOrientation="mixed" class="example-list" (cdkDropListDropped)="dropImage($event)">
+                  @for (item of items; track item) {
+                    <div class="example-box" cdkDrag><img class="img-responsive"
+                      src="{{ item.url }}" style="width: 100%; height: 100%; object-fit: cover;" /> </div>
+                  }
+                </div>
+                <!--
+                <mat-grid-list cols="4" rowHeight="1:1"  cdkDropList (cdkDropListDropped)="dropImage($event)" class="photo-grid">
 
-                  <mat-grid-tile *ngFor="let item of items" (click)="ampliarImagem(item)"><img class="img-responsive"
-                      src="{{ item.url }}" style="max-width: 240px; object-fit: cover" /></mat-grid-tile>
+                  <mat-grid-tile *ngFor="let item of items" class="photo-item" (click)="ampliarImagem(item)" cdkDrag [cdkDragData]="item"></mat-grid-tile>
 
                 </mat-grid-list>
-
+-->
               </div>
               <div fxLayout="column" style="margin-left: 1em; margin-right: 1em;">
                 <mat-divider vertical style="height: 40em"></mat-divider>

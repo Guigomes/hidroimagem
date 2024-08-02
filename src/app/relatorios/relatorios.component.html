@@ -23,26 +23,33 @@
         Você ainda não criou nenhum relatório. Clique no botão acima para
         criar.
       </p>
-    
-      <mat-table *ngIf="resumos.length > 0" [dataSource]="dataSource"  class="mat-elevation-z8 tabela-resumos">
+
+      <mat-table *ngIf="resumos.length > 0" [dataSource]="dataSource" matSort  class="mat-elevation-z8 tabela-resumos">
         <ng-container matColumnDef="cliente">
-          <mat-header-cell *matHeaderCellDef>Cliente</mat-header-cell>
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Cliente</mat-header-cell>
           <mat-cell *matCellDef="let element; let i = index" (click)="abrirRelatorio(element)">
             {{ element.cliente }}
           </mat-cell>
         </ng-container>
         <ng-container matColumnDef="data">
-          <mat-header-cell *matHeaderCellDef>Data</mat-header-cell>
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Data</mat-header-cell>
           <mat-cell *matCellDef="let element; let i = index" (click)="abrirRelatorio(element)">
             {{ element.data | date : 'dd/MM/yyyy'}}
           </mat-cell>
         </ng-container>
 
         <!-- Name Column -->
-        <ng-container matColumnDef="titulo">
-          <mat-header-cell *matHeaderCellDef>Titulo</mat-header-cell>
+        <ng-container matColumnDef="cidade">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Cidade</mat-header-cell>
           <mat-cell *matCellDef="let element; let i = index" (click)="abrirRelatorio(element)">
-            {{ element.titulo }}
+            {{ element.cidade }}
+          </mat-cell>
+        </ng-container>
+         <!-- Name Column -->
+         <ng-container matColumnDef="poco">
+          <mat-header-cell *matHeaderCellDef mat-sort-header>Poço</mat-header-cell>
+          <mat-cell *matCellDef="let element; let i = index" (click)="abrirRelatorio(element)">
+            {{ element.poco }}
           </mat-cell>
         </ng-container>
         <!-- Name Column -->

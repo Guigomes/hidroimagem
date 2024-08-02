@@ -17,14 +17,14 @@ import {MatDialogModule} from '@angular/material/dialog';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import { MatPaginatorModule } from '@angular/material/paginator';
-
+import { MatSortModule } from '@angular/material/sort';
 import {MatIconModule} from '@angular/material/icon';
 
 @NgModule({
     imports: [
       MatProgressSpinnerModule,
       MatPaginatorModule,
-      MatDatepickerModule, 
+      MatDatepickerModule,
         MatFormFieldModule,
         MatInputModule,
         MatToolbarModule,
@@ -37,6 +37,7 @@ import {MatIconModule} from '@angular/material/icon';
         MatGridListModule,
         MatDividerModule,
         MatTableModule,
+        MatSortModule,
         MatSnackBarModule,
         MatDialogModule
     ],
@@ -54,7 +55,8 @@ import {MatIconModule} from '@angular/material/icon';
       MatGridListModule,
       MatDividerModule,
       MatTableModule,
-      MatDatepickerModule, 
+      MatSortModule,
+      MatDatepickerModule,
       MatDialogModule,
       MatProgressSpinnerModule
     ]

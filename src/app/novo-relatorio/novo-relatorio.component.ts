@@ -6,6 +6,7 @@ import { MatDialog, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dial
 import { MatTableDataSource } from '@angular/material/table';
 import { RelatoriosService } from '../services/relatorios.service';
 import autoTable from 'jspdf-autotable'
+import {CdkDragDrop, CdkDropList, CdkDrag, moveItemInArray} from '@angular/cdk/drag-drop';
 
 import { Evento } from '../models/evento';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -71,7 +72,8 @@ export class NovoRelatorioComponent implements OnInit {
   public ufSelecionada: String = "";
   public mostrarProgressBar: boolean = false;
   public title = "Novo Relatório";
-
+  options: string[] = ['Emenda de tubo liso', 'Filtro', 'Nível estático'];
+  filteredOptions: string[] = [];
 
   private relatorio: Relatorio | null = null;
 
@@ -80,6 +82,14 @@ export class NovoRelatorioComponent implements OnInit {
   public observacoesFormGroup: FormGroup = new FormGroup({
     observacoes: new FormControl('')
   });
+
+  drop(event: CdkDragDrop<Evento[]>) {
+    const prevIndex = this.dataSource.data.findIndex((d) => d === event.item.data);
+    moveItemInArray(this.dataSource.data, prevIndex, event.currentIndex);
+    this.dataSource.data = [...this.dataSource.data];
+
+
+  }
 
   @HostListener('window:resize', ['$event'])
   onWindowResize() {
@@ -90,7 +100,7 @@ export class NovoRelatorioComponent implements OnInit {
     AppComponent.mostrarBackButton = true;
 
     this.informacoesGeraisFormGroup = new FormGroup({
-      titulo: new FormControl(''),
+      titulo: new FormControl('RELATORIO PERFILAGEM OTICA EM POÇOS TUBULARES'),
       cliente: new FormControl(''),
       local: new FormControl(''),
       cidade: new FormControl(''),
@@ -200,9 +210,28 @@ export class NovoRelatorioComponent implements OnInit {
 
   }
 
+  dropImage(event: CdkDragDrop<any[]>) {
+    moveItemInArray(this.items, event.previousIndex, event.currentIndex);
+    this.updatePositions();
+  }
+
+  updatePositions() {
+    this.items.forEach((item, index) => {
+      item.id = index + 1;
+    });
+  }
+  onInputChange(value: string) {
+    this.filteredOptions = this._filter(value);
+  }
+  private _filter(value: string): string[] {
+    const filterValue = value.toLowerCase();
+    return this.options.filter(option => option.toLowerCase().includes(filterValue));
+  }
 
   ngOnInit() {
     this.getScreenWidth = window.innerWidth;
+    this.filteredOptions = this.options;
+
   }
 
   goForward(stepper: MatStepper) {
@@ -270,8 +299,10 @@ export class NovoRelatorioComponent implements OnInit {
 
     novoRelatorio.observacoes = this.observacoesFormGroup.value.observacoes;
 
-    let novosEventos = this.eventos.filter((evento) => evento.evento.length > 0 && evento.profundidade.length > 0);
-
+    let novosEventos = this.eventos.filter((evento) => evento.evento.length > 0 || evento.profundidade.length > 0);
+    novosEventos.forEach((obj, index) => {
+      obj.position = index + 1;
+    });
     console.log("Novos Eventos", novosEventos);
 
     novoRelatorio.eventos = novosEventos;
@@ -497,7 +528,7 @@ export class NovoRelatorioComponent implements OnInit {
       });
       dialogRef.afterOpened().subscribe(() => {
         console.log("ABRIU", dialogRef);
-  
+
         console.log("relatorio", this.relatorio);
         let endereco = "Rua Lilia Elisa Eberle Lupo, 501 - casa 187 - Salto Grande. \n CEP: 14.803-886  Araraquara-SP. Fone: (16) 3322-0619.\nwww.hidroimagem.com.br";
         let textoCapa = "O trabalho de perfilagem ótica é composto de DVD contendo imagens coloridas geradas por câmeras introduzidas simultaneamente em um poço e um relatório com informações sobre as imagens captadas pelas câmeras. A combinação das duas situações auxilia a tomada de decisões no ato de trabalhar o poço.\n A HIDROIMAGEM SERVIÇOS DE PERFILAGEM, não se responsabiliza por tais decisões.";
@@ -507,55 +538,55 @@ export class NovoRelatorioComponent implements OnInit {
             unit: "cm",
             format: 'a4'
           });
-  
+
           console.log("REL 1");
           var width = doc.internal.pageSize.getWidth();
-  
+
           this.addCapa(this.relatorio, doc, textoCapa, endereco);
-  
+
           this.novaPagina(doc, endereco);
-  
+
           this.addInformacoesGerais(this.relatorio, doc);
-  
+
           this.addObservacoes(this.relatorio, doc, endereco);
-  
+
           console.log("REL 2");
           this.novaPagina(doc, endereco);
-  
+
           this.addEventos(this.relatorio, doc, endereco);
-  
+
           this.novaPagina(doc, endereco);
-  
+
           this.addImagens(this.relatorio, doc, endereco);
-  
+
           console.log("REL 3");
           /*
                   this.novaPagina(doc, endereco);
-          
+
                   doc.setFont("", 'bold');
-          
+
                   doc.setFontSize(14);
-          
+
                   doc.setLineWidth(0.03);
-          
+
                   doc.setDrawColor(0, 0, 0);
-          
+
                   doc.line(5, 25.5, 16, 25.5);
                   doc.text("Gilberto Gonçalves Domingos", width / 2, 26, { align: 'center', maxWidth: 21 });
                   doc.text("Diretor", width / 2, 26.5, { align: 'center', maxWidth: 21 });
           */
-  
+
           doc.save(this.relatorio.titulo + " - " + this.relatorio?.cliente + ".pdf");
           console.log("Terminou", new Date());
           dialogRef.close();
         } else {
           this.toast("Erro ao gerar PDF. Relatório não encontrado.");
           dialogRef.close();
-  
+
         }
       });
     });
-  
+
 
 
 

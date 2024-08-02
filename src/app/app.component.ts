@@ -35,10 +35,15 @@ export class AppComponent {
       this.mostrarLoadingBar = false;
 
     } else {
+      console.log("BUSCaR");
       this.rel.buscarUsuariosPermitidos().subscribe((usuariosPermitidos: any) => {
+        console.log("usuariosPermitidos " , usuariosPermitidos);
         this.usuariosPermitidos = usuariosPermitidos;
 
+
         this.afAuth.authState.subscribe((user) => {
+
+          console.log("VOLTOU USER" ,user);
           if (user) {
             console.log("logado", user);
 
@@ -48,7 +53,7 @@ export class AppComponent {
 
           } else {
             var usuarioNaoLogado = localStorage.getItem('user');
-          
+
             console.log("Não logado2", usuarioNaoLogado);
             if (usuarioNaoLogado && usuarioNaoLogado != "undefined" && usuarioNaoLogado != null) {
               this.usuario = JSON.parse(usuarioNaoLogado);
@@ -99,16 +104,19 @@ export class AppComponent {
   }
 
   public googleAuth() {
+    console.log("LOGAR!!!!");
 
     return this.AuthLogin(new auth.GoogleAuthProvider()).then((data: any) => {
       this.usuario = data.user;
+
+      console.log("USER", data.user);
       this.validarUsuario();
     });
   }
 
   private validarUsuario() {
 
-
+console.log(this.usuariosPermitidos);
 
 
     let usuarioPermitido = this.usuariosPermitidos.find((usuario: any) => usuario.email == this.usuario.email);
@@ -140,7 +148,7 @@ export class AppComponent {
 
   private AuthLogin(provider: any) {
     return this.afAuth
-      .signInWithRedirect(provider)
+      .signInWithPopup(provider)
 
       .catch((error) => {
         console.log("Error Sign-in", error);
